@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Modifier l'utilisateur</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container" style="max-width: 500px; margin-top: 50px;">
+        <h2>Modifier l'utilisateur : {{ user.username }}</h2>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert {{ category }}">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <form method="POST">
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label>Nom d'utilisateur</label>
+                <input type="text" name="username" value="{{ user.username }}" required class="form-control" style="width: 100%; padding: 8px;">
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label>Email</label>
+                <input type="email" name="email" value="{{ user.email or '' }}" class="form-control" style="width: 100%; padding: 8px;">
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label>Rôle</label>
+                <select name="role" class="form-control" style="width: 100%; padding: 8px;">
+                    <option value="user" {% if user.role == 'user' %}selected{% endif %}>Utilisateur (user)</option>
+                    <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Administrateur (admin)</option>
+                </select>
+            </div>
+            
+            <button type="submit" class="btn" style="background: #2563eb; color: white; padding: 10px 15px; border: none; cursor: pointer;">Enregistrer</button>
+            <a href="{{ url_for('admin_users') }}" style="margin-left: 10px; text-decoration: none; color: #64748b;">Annuler</a>
+        </form>
+    </div>
+</body>
+</html>

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestion des Athlètes - CycloStats</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="app-layout">
+        {% include 'sidebar.html' %}
+        <main class="content">
+            <div class="container">
+                <h1>👥 Liste des Athlètes</h1>
+                <div class="card">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Photo</th>
+                                <th>Nom & Prénom</th>
+                                <th>Date de naissance</th>
+                                <th>Catégorie</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for a in athletes %}
+                            <tr>
+                                <td>
+                                    {% if a.nom_fichier %}
+                                        <img src="{{ url_for('static', filename='uploads/' + a.nom_fichier) }}" class="avatar-athlete">
+                                    {% else %}
+                                        <span class="avatar-placeholder">{{ a.prenom[0] }}{{ a.nom[0] }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ a.prenom }} {{ a.nom }}</td>
+                                <td>{{ a.date_naissance or '-' }}</td>
+                                <td>{{ a.categorie or '-' }}</td>
+                                <td>
+                                    <div class="groupe-actions">
+                                        <!-- Bouton Modifier (Stylo) -->
+                                        <a href="{{ url_for('modifier_athlete', id=a.id) }}" class="btn-icone btn-modifier" title="Modifier">
+                                            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                                        </a>
+                                        
+                                        <!-- Bouton Supprimer (Croix) -->
+                                        <form action="{{ url_for('supprimer_athlete', id=a.id) }}" method="POST" onsubmit="return confirm('Voulez-vous vraiment supprimer cet athlète ?');">
+                                            <button type="submit" class="btn-icone btn-supprimer" title="Supprimer">
+                                                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5">Aucun athlète enregistré. <a href="{{ url_for('ajouter_athlete') }}">Ajouter un athlète</a></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

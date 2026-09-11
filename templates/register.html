@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Inscription - KMC Cycling</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="auth-body">
+
+    <!-- Bulles flottantes -->
+    <div class="bubbles">
+        <span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span>
+    </div>
+
+    <div class="auth-container">
+        <div class="auth-brand">
+            <img src="{{ url_for('static', filename='kmc.jpg') }}" alt="Logo KMC">
+            <span>KMC Cycling</span>
+        </div>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="flash-error">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" class="auth-form">
+            <input type="text" name="username" placeholder="Nom d'utilisateur" required>
+            <input type="password" name="password" placeholder="Mot de passe" required>
+            <button type="submit">S'inscrire</button>
+        </form>
+
+        <div class="auth-links">
+            Déjà un compte ? <a href="{{ url_for('login') }}">Se connecter</a>
+        </div>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Mon Profil - CycloStats</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="app-layout">
+        {% include 'sidebar.html' %}
+        <main class="content">
+            <div class="container carte-formulaire">
+                <div class="card">
+                    <h1>⚙️ Mon Profil</h1>
+                    
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="{{ category }}">{{ message }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <form method="POST">
+                        <label for="username">Nom d'utilisateur</label>
+                        <input type="text" id="username" name="username" value="{{ utilisateur.username }}" required>
+
+                        <label for="email">Adresse Email (pour récupération)</label>
+                        <input type="email" id="email" name="email" value="{{ utilisateur.email or '' }}" placeholder="exemple@domaine.com">
+
+                        <label for="password">Nouveau mot de passe (laisser vide pour ne pas changer)</label>
+                        <input type="password" id="password" name="password" placeholder="••••••••">
+
+                        <div class="boutons">
+                            <button type="submit" class="pleine-largeur">Enregistrer les modifications</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

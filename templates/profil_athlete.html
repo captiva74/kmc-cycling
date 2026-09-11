@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Profil - {{ athlete.prenom }} {{ athlete.nom }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="app-layout">
+        {% include 'sidebar.html' %}
+        <main class="content">
+            <div class="container">
+                <div class="entete-section">
+                    <h2>Fiche de l'Athlète</h2>
+                    <div style="display: flex; gap: 10px;">
+                        <a href="{{ url_for('modifier_athlete', id=athlete.id) }}" class="bouton-export" style="background: #2563eb;">Modifier</a>
+                        <form action="{{ url_for('supprimer_athlete', id=athlete.id) }}" method="POST" class="form-inline" onsubmit="return confirm('Voulez-vous vraiment supprimer cet athlète ?');">
+                            <button type="submit" class="bouton-export" style="background: #dc2626; margin: 0; cursor: pointer;">Supprimer</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card" style="display: flex; align-items: center; gap: 24px; margin-bottom: 20px;">
+                    {% if athlete.nom_fichier %}
+                        <img src="{{ url_for('static', filename='uploads/' + athlete.nom_fichier) }}" class="avatar-grande">
+                    {% else %}
+                        <div class="avatar-grande-placeholder">{{ athlete.prenom[0] }}{{ athlete.nom[0] }}</div>
+                    {% endif %}
+                    <div>
+                        <h1 style="margin: 0; text-transform: capitalize;">{{ athlete.prenom }} {{ athlete.nom }}</h1>
+                        <p style="margin: 6px 0; color: #6b7280;">Date de naissance : {{ athlete.date_naissance or 'Non renseignée' }}</p>
+                        <div><span class="badge-categorie">{{ athlete.categorie or 'Sans catégorie' }}</span></div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 style="margin-top: 0;">Historique des courses de l'athlète</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Course</th>
+                                <th>Date</th>
+                                <th>Classement</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in resultats %}
+                            <tr>
+                                <td><strong>{{ r.nom_course }}</strong></td>
+                                <td>{{ r.date_course }}</td>
+                                <td><span class="badge-categorie">#{{ r.classement }}</span></td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="3">Aucun résultat enregistré pour cet athlète.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Modifier un résultat</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="app-layout">
+{% include 'sidebar.html' %}
+<main class="content">
+<div class="container carte-formulaire">
+    <div class="card">
+        <h1>✎ Modifier le résultat</h1>
+        {% if erreur %}
+            <div class="erreur">{{ erreur }}</div>
+        {% endif %}
+
+        {% if profil and profil.nom_fichier %}
+            <img src="{{ url_for('static', filename='uploads/' + profil.nom_fichier) }}" class="avatar-grande" alt="Photo actuelle">
+        {% else %}
+            <div class="avatar-grande-placeholder">{{ resultat.prenom[0] }}{{ resultat.nom[0] }}</div>
+        {% endif %}
+
+        <form method="POST" enctype="multipart/form-data">
+            <label for="nom">Nom</label>
+            <input type="text" id="nom" name="nom" value="{{ resultat.nom }}" required>
+
+            <label for="prenom">Prénom</label>
+            <input type="text" id="prenom" name="prenom" value="{{ resultat.prenom }}" required>
+
+            <label for="course">Nom de la course</label>
+            <input type="text" id="course" name="course" value="{{ resultat.course }}" required>
+
+            <label for="date_course">Date de la course</label>
+            <input type="date" id="date_course" name="date_course" value="{{ resultat.date_course }}" required>
+
+            <label for="classement">Classement</label>
+            <input type="number" id="classement" name="classement" min="1" value="{{ resultat.classement }}" required>
+
+            <label for="photo">Changer la photo de l'athlète (optionnel)</label>
+            <input type="file" id="photo" name="photo" accept="image/*">
+
+            <label for="date_naissance">Date de naissance de l'athlète (optionnel)</label>
+            <input type="date" id="date_naissance" name="date_naissance" value="{{ profil.date_naissance if profil else '' }}">
+
+            <label for="categorie">Catégorie de l'athlète (optionnel)</label>
+            <select id="categorie" name="categorie">
+                <option value="">— Non renseignée —</option>
+                {% for cat in categories %}
+                <option value="{{ cat }}" {{ 'selected' if profil and profil.categorie == cat else '' }}>{{ cat }}</option>
+                {% endfor %}
+            </select>
+
+            <div class="boutons">
+                <a href="{{ url_for('athletes') }}" class="lien-retour">Annuler</a>
+                <button type="submit">Enregistrer</button>
+            </div>
+        </form>
+    </div>
+</div>
+</main>
+</div>
+</body>
+</html>

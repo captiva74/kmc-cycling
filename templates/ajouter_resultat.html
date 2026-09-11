@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Ajouter un résultat - Cyclisme</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+  <body>
+    <div class="app-layout">
+      {% include 'sidebar.html' %}
+      <main class="content">
+        <div class="container carte-formulaire">
+          <div class="card">
+            <h1>➕ Ajouter un résultat</h1>
+            {% with messages = get_flashed_messages() %} 
+              {% if messages %} 
+                {% for message in messages %}
+                  <div class="succes">{{ message }}</div>
+                {% endfor %} 
+              {% endif %} 
+            {% endwith %} 
+            {% if erreur %}
+              <div class="erreur">{{ erreur }}</div>
+            {% endif %}
+            
+            <form action="{{ url_for('ajouter_resultat') }}" method="POST">
+              
+              <!-- 1. Sélection de la catégorie -->
+              <label for="categorie_filtre">1. Filtrer par Catégorie</label>
+              <select id="categorie_filtre" name="categorie_filtre">
+                <option value="">— Toutes les catégories —</option>
+                {% for cat in categories %}
+                <option value="{{ cat }}">{{ cat }}</option>
+                {% endfor %}
+              </select>
+
+              <!-- 2. Sélection de l'athlète -->
+              <label for="athlete_id">2. Choisir l'athlète</label>
+              <select id="athlete_id" name="athlete_id" required>
+                <option value="">— Sélectionnez d'abord une catégorie —</option>
+                {% for athlète in athletes %}
+                <option value="{{ athlète.id }}" data-categorie="{{ athlète.categorie }}">
+                  {{ athlète.nom }} {{ athlète.prenom }} {% if athlète.categorie %}({{ athlète.categorie }}){% endif %}
+                </option>
+                {% endfor %}
+              </select>
+
+              <!-- 3. Informations de la course -->
+              <label for="course">Nom de la course</label>
+              <input type="text" id="course" name="course" required />
+
+              <label for="date_course">Date de la course</label>
+              <input type="date" id="date_course" name="date_course" required />
+
+              <label for="classement">Classement</label>
+              <input
+                type="number"
+                id="classement"
+                name="classement"
+                min="1"
+                required
+              />
+
+              <div class="boutons">
+                <a href="{{ url_for('liste_athletes') }}" class="lien-retour">Annuler</a>
+                <a href="{{ url_for('historique') }}" class="lien-retour">Voir l'historique</a>
+                <button type="submit">Ajouter le résultat</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Script JavaScript pour filtrer les athlètes selon la catégorie sélectionnée -->
+    <script>
+      const selectCategorie = document.getElementById('categorie_filtre');
+      const selectAthlete = document.getElementById('athlete_id');
+      const optionsAthletes = Array.from(selectAthlete.options);
+
+      selectCategorie.addEventListener('change', function() {
+        const categorieChoisie = this.value;
+
+        // Vider la liste actuelle des athlètes
+        selectAthlete.innerHTML = '<option value="">— Sélectionnez un athlète —</option>';
+
+        // Filtrer et réinsérer les athlètes correspondants
+        optionsAthletes.forEach(option => {
+          if (option.value === "") return; // Ignorer l'option par défaut
+          
+          const catAthlete = option.getAttribute('data-categorie');
+          if (categorieChoisie === "" || catAthlete === categorieChoisie) {
+            selectAthlete.appendChild(option);
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

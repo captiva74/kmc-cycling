@@ -1,0 +1,111 @@
+<!-- @ts-nocheck -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Tableau de bord - <img src="{{ url_for('static', filename='kmc.jpg') }}" alt="Logo" style="height: 15px; vertical-align: middle;"> KMC Cycling</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+</head>
+<body>
+    <div class="app-layout">
+        {% include 'sidebar.html' %}
+        <main class="content">
+            <div class="container">
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="flash flash-success">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <h1>📊 Tableau de bord</h1>
+
+                <div class="grid">
+                    <div class="card">
+                        <h2>Statistiques globales</h2>
+                        <div class="stat-box">
+                            <div>
+                                <div class="valeur">{{ stats.nb_courses }}</div>
+                                <div class="label">Résultats saisis</div>
+                            </div>
+                            <div>
+                                <div class="valeur">{{ stats.nb_athletes }}</div>
+                                <div class="label">Athlètes</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h2>Classement moyen par athlète</h2>
+                        <canvas id="graphMoyenne"></canvas>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>Performances par athlète</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Photo</th>
+                                <th>Athlète</th>
+                                <th>Courses</th>
+                                <th>Meilleur</th>
+                                <th>Pire</th>
+                                <th>Moyenne</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for a in stats.par_athlete %}
+                                <tr>
+                                    <td>
+                                        {% if a.nom_fichier %}
+                                            <img src="{{ url_for('static', filename='uploads/' + a.nom_fichier) }}" class="avatar-athlete" alt="{{ a.prenom }}">
+                                        {% else %}
+                                            <span class="avatar-placeholder">{{ a.prenom[0] }}{{ a.nom[0] }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ a.prenom }} {{ a.nom }}</td>
+                                    <td>{{ a.nb_courses or 0 }}</td>
+                                    <td>{{ a.meilleur if a.meilleur is not none else '-' }}</td>
+                                    <td>{{ a.pire if a.pire is not none else '-' }}</td>
+                                    <td><strong>{{ a.moyenne if a.moyenne is not none else '-' }}</strong></td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="6">Aucune donnée pour le moment. <a href="{{ url_for('ajouter_athlete') }}">Commencez par ajouter un athlète</a>.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <script>
+                const labels = [{% for a in stats.par_athlete %}{% if a.moyenne %}"{{ a.prenom }} {{ a.nom }}",{% endif %}{% endfor %}];
+                const moyennes = [{% for a in stats.par_athlete %}{% if a.moyenne %}{{ a.moyenne }},{% endif %}{% endfor %}];
+
+                if (labels.length > 0) {
+                    new Chart(document.getElementById('graphMoyenne'), {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Classement moyen (plus bas = meilleur)',
+                                data: moyennes,
+                                backgroundColor: '#dc2626'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: { legend: { display: false } },
+                            scales: { y: { beginAtZero: true } }
+                        }
+                    });
+                }
+            </script>
+        </main>
+    </div>
+</body>
+</html>

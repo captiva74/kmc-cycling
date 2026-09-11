@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Modifier Athlète - CycloStats</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="app-layout">
+        {% include 'sidebar.html' %}
+        <main class="content">
+            <div class="container carte-formulaire">
+                <div class="card">
+                    <h1>Modifier l'athlète</h1>
+                    <form method="POST" enctype="multipart/form-data">
+                        <label for="nom">Nom</label>
+                        <input type="text" id="nom" name="nom" value="{{ athlete.nom }}" required>
+
+                        <label for="prenom">Prénom</label>
+                        <input type="text" id="prenom" name="prenom" value="{{ athlete.prenom }}" required>
+
+                        <label for="date_naissance">Date de naissance</label>
+                        <input type="date" id="date_naissance" name="date_naissance" value="{{ athlete.date_naissance }}">
+
+                        <label for="categorie">Catégorie</label>
+                        <select id="categorie" name="categorie">
+                            {% for cat in categories %}
+                                <option value="{{ cat }}" {% if athlete.categorie == cat %}selected{% endif %}>{{ cat }}</option>
+                            {% endfor %}
+                        </select>
+
+                        <label for="photo">Changer la photo</label>
+                        <input type="file" id="photo" name="photo" accept="image/*">
+
+                        <div class="boutons">
+                            <button type="submit">Enregistrer</button>
+                            <a href="{{ url_for('profil_athlete', id=athlete.id) }}" class="lien-retour">Annuler</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

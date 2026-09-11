@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestion des Utilisateurs - CycloStats</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="app-layout">
+        {% include 'sidebar.html' %}
+        <main class="content">
+            <div class="container">
+                <h1>👥 Gestion des Utilisateurs</h1>
+                
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="{{ category if category else 'succes' }}">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <div class="card" style="margin-top: 20px;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nom d'utilisateur</th>
+                                <th>Email</th>
+                                <th>Rôle</th>
+                                <th>Statut</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for u in users %}
+                            <tr>
+                                <td>{{ u.id }}</td>
+                                <td><strong>{{ u.username }}</strong></td>
+                                <td>{{ u.email or 'Non renseigné' }}</td>
+                                <td><span class="badge-categorie">{{ u.role }}</span></td>
+                                <td>
+                                    {% if u.is_blocked == 1 %}
+                                        <span style="color: #dc2626; font-weight: 600;">Bloqué</span>
+                                    {% else %}
+                                        <span style="color: #166534; font-weight: 600;">Actif</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="groupe-actions">
+                                        <!-- Bouton Modifier -->
+                                        <a href="{{ url_for('admin_edit_user', id=u.id) }}" class="btn-icone" style="background: #2563eb; color: white; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;" title="Modifier">
+                                            ✏️
+                                        </a>
+                                        <!-- Bouton Bloquer / Débloquer -->
+                                        <form action="{{ url_for('toggle_block_user', id=u.id) }}" method="POST">
+                                        <button type="submit" class="btn-icone" style="background: {{ '#166534' if u.is_blocked == 1 else '#d97706' }}; color: white;" title="{{ 'Débloquer' if u.is_blocked == 1 else 'Bloquer' }}">                                                {% if u.is_blocked == 1 %}🔓{% else %}🔒{% endif %}
+                                            </button>
+                                        </form>
+                                        
+                                        <!-- Bouton Supprimer -->
+                                        {% if u.id != session['user_id'] %}
+                                        <form action="{{ url_for('admin_delete_user', id=u.id) }}" method="POST" onsubmit="return confirm('Voulez-vous vraiment supprimer cet utilisateur ?');">
+                                            <button type="submit" class="btn-icone btn-supprimer" title="Supprimer">
+                                                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>
