@@ -1,6 +1,11 @@
 import os
 import gpxpy
 import smtplib
+import csv
+import pandas as pd
+from io import BytesIO
+from io import StringIO
+from flask import make_response
 from email.message import EmailMessage
 from itsdangerous import URLSafeTimedSerializer
 from flask import Flask, render_template, request, redirect, url_for, flash, session
@@ -76,6 +81,7 @@ def init_db():
     conn.execute('''
         CREATE TABLE IF NOT EXISTS activites (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            athlete_id INTEGER,
             nom TEXT,
             distance REAL,
             duree INTEGER,
@@ -107,7 +113,7 @@ def init_db():
 
 init_db()
 
-CATEGORIES = ['École', 'Benjamin', 'Minime', 'Cadet', 'Junior', 'Espoir', 'Senior', 'Master']
+CATEGORIES = ['Écoles', 'Benjamins', 'Minimes', 'Cadets', 'Juniors', 'U23', 'Elites', 'Masters']
 
 def admin_required(f):
     @wraps(f)
@@ -313,7 +319,7 @@ def admin_edit_user(id):
     conn.close()
     return render_template('admin_edit_user.html', user=user)
 
-# --- ROUTES ACTIVITÉS GPX (Remplace Strava) ---
+# --- ROUTES ACTIVITÉS GPX ---
 @app.route('/activites/importer', methods=['POST'])
 def importer_gpx():
     if session.get('role') != 'admin':
@@ -412,6 +418,33 @@ def supprimer_activite(id):
     
     flash("Activité supprimée avec succès.", "succes")
     return redirect(url_for('liste_activites'))
+
+@app.route('/athletes/export/excel')
+def export_athletes_excel():
+    categorie = request.args.get('categorie', '')
+    conn = get_db_connection()
+    
+    if categorie:
+        query = 'SELECT id, nom, prenom, date_naissance, categorie FROM athletes WHERE categorie = ?'
+        df = pd.read_sql_query(query, conn, params=(categorie,))
+        filename = f"athletes_{categorie}.xlsx"
+    else:
+        query = 'SELECT id, nom, prenom, date_naissance, categorie FROM athletes'
+        df = pd.read_sql_query(query, conn)
+        filename = "tous_les_athletes.xlsx"
+        
+    conn.close()
+
+    # Création du fichier Excel en mémoire
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Athlètes')
+    output.seek(0)
+
+    response = make_response(output.read())
+    response.headers["Content-Disposition"] = f"attachment; filename={filename}"
+    response.headers["Content-type"] = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    return response
 # --- FIN ROUTES ACTIVITÉS GPX ---
 
 @app.route('/logout')
@@ -549,12 +582,16 @@ def supprimer_resultat(id):
 
 @app.route('/athletes')
 def liste_athletes():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
+    categorie = request.args.get('categorie', '')
     conn = get_db_connection()
-    athletes = conn.execute('SELECT * FROM athletes').fetchall()
+    
+    if categorie:
+        athletes = conn.execute('SELECT * FROM athletes WHERE categorie = ?', (categorie,)).fetchall()
+    else:
+        athletes = conn.execute('SELECT * FROM athletes').fetchall()
+        
     conn.close()
-    return render_template('liste_athletes.html', athletes=athletes)
+    return render_template('athletes.html', athletes=athletes, categorie_selectionnee=categorie, categories=CATEGORIES)
 
 @app.route('/athlete/ajouter', methods=['GET', 'POST'])
 @admin_required
@@ -580,6 +617,33 @@ def ajouter_athlete():
         return redirect(url_for('liste_athletes'))
         
     return render_template('ajouter_athlete.html', categories=CATEGORIES)
+
+@app.route('/athletes/export/csv')
+def export_athletes_csv():
+    categorie = request.args.get('categorie', '')
+    conn = get_db_connection()
+    
+    if categorie:
+        athletes = conn.execute('SELECT * FROM athletes WHERE categorie = ?', (categorie,)).fetchall()
+        filename = f"athletes_{categorie}.csv"
+    else:
+        athletes = conn.execute('SELECT * FROM athletes').fetchall()
+        filename = "tous_les_athletes.csv"
+        
+    conn.close()
+
+    si = StringIO()
+    writer = csv.writer(si, delimiter=';')
+    # En-têtes du CSV
+    writer.writerow(['ID', 'Nom', 'Prenom', 'Date de naissance', 'Categorie'])
+
+    for a in athletes:
+        writer.writerow([a['id'], a['nom'], a['prenom'], a['date_naissance'], a['categorie']])
+
+    output = make_response(si.getvalue().encode('utf-8-sig')) # utf-8-sig pour compatibilité Excel
+    output.headers["Content-Disposition"] = f"attachment; filename={filename}"
+    output.headers["Content-type"] = "text/csv; charset=utf-8"
+    return output
 
 @app.route('/athlete/<int:id>')
 def profil_athlete(id):

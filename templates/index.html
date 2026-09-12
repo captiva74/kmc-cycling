@@ -29,62 +29,75 @@
                     {% endif %}
                 </div>
 
-                <div class="grid">
+                <!-- Grille principale pour les statistiques et graphiques -->
+                <div class="grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 20px;">
+                    
+                    <!-- Bloc Statistiques globales -->
                     <div class="card">
                         <h2>Statistiques globales</h2>
-                        <div class="stat-box">
+                        <div class="stat-box" style="display: flex; justify-content: space-around; text-align: center; margin-top: 20px;">
                             <div>
-                                <div class="valeur">{{ stats.nb_courses }}</div>
-                                <div class="label">Résultats saisis</div>
+                                <div class="valeur" style="font-size: 2rem; font-weight: bold; color: #007bff;">{{ stats.nb_courses }}</div>
+                                <div class="label" style="color: #666;">Résultats saisis</div>
                             </div>
                             <div>
-                                <div class="valeur">{{ stats.nb_athletes }}</div>
-                                <div class="label">Athlètes</div>
+                                <div class="valeur" style="font-size: 2rem; font-weight: bold; color: #28a745;">{{ stats.nb_athletes }}</div>
+                                <div class="label" style="color: #666;">Athlètes</div>
                             </div>
                         </div>
                     </div>
 
+                    <!-- Bloc Graphique Circulaire : Indice / Volume par athlète -->
+                    <div class="card" style="display: flex; flex-direction: column; align-items: center;">
+                        <h2>🎯 Indice d'entraînement (Volume)</h2>
+                        <div style="width: 220px; height: 220px; position: relative; margin-top: 10px;">
+                            <canvas id="graphCirculaire"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Bloc Classement moyen -->
                     <div class="card">
                         <h2>Classement moyen par athlète</h2>
                         <canvas id="graphMoyenne"></canvas>
                     </div>
                 </div>
 
+                <!-- Tableau des performances -->
                 <div class="card">
                     <h2>Performances par athlète</h2>
-                    <table>
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
                         <thead>
-                            <tr>
-                                <th>Photo</th>
-                                <th>Athlète</th>
-                                <th>Courses</th>
-                                <th>Meilleur</th>
-                                <th>Pire</th>
-                                <th>Moyenne</th>
+                            <tr style="border-bottom: 2px solid #ddd; text-align: left;">
+                                <th style="padding: 10px;">Photo</th>
+                                <th style="padding: 10px;">Athlète</th>
+                                <th style="padding: 10px;">Courses</th>
+                                <th style="padding: 10px;">Meilleur</th>
+                                <th style="padding: 10px;">Pire</th>
+                                <th style="padding: 10px;">Moyenne</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for a in stats.par_athlete %}
-                                <tr>
-                                    <td>
+                                <tr style="border-bottom: 1px solid #eee;">
+                                    <td style="padding: 10px;">
                                         {% if a.nom_fichier %}
-                                            <img src="{{ url_for('static', filename='uploads/' + a.nom_fichier) }}" class="avatar-athlete" alt="{{ a.prenom }}">
+                                            <img src="{{ url_for('static', filename='uploads/' + a.nom_fichier) }}" class="avatar-athlete" alt="{{ a.prenom }}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
                                         {% else %}
-                                            <span class="avatar-placeholder">{{ a.prenom[0] }}{{ a.nom[0] }}</span>
+                                            <span class="avatar-placeholder" style="display: inline-block; width: 40px; height: 40px; line-height: 40px; text-align: center; background: #ccc; border-radius: 50%; font-weight: bold; color: white;">{{ a.prenom[0] }}{{ a.nom[0] }}</span>
                                         {% endif %}
                                     </td>
-                                    <td>{{ a.prenom }} {{ a.nom }}</td>
-                                    <td>{{ a.nb_courses or 0 }}</td>
-                                    <td>{{ a.meilleur if a.meilleur is not none else '-' }}</td>
-                                    <td>{{ a.pire if a.pire is not none else '-' }}</td>
-                                    <td><strong>{{ a.moyenne if a.moyenne is not none else '-' }}</strong></td>
+                                    <td style="padding: 10px;">{{ a.prenom }} {{ a.nom }}</td>
+                                    <td style="padding: 10px;">{{ a.nb_courses or 0 }}</td>
+                                    <td style="padding: 10px;">{{ a.meilleur if a.meilleur is not none else '-' }}</td>
+                                    <td style="padding: 10px;">{{ a.pire if a.pire is not none else '-' }}</td>
+                                    <td style="padding: 10px;"><strong>{{ a.moyenne if a.moyenne is not none else '-' }}</strong></td>
                                 </tr>
                             {% else %}
                                 <tr>
-                                    <td colspan="6">
+                                    <td colspan="6" style="padding: 20px; text-align: center; color: #666;">
                                         Aucune donnée pour le moment. 
                                         {% if session.get('role') == 'admin' %}
-                                            <a href="{{ url_for('ajouter_athlete') }}">Commencez par ajouter un athlète</a>.
+                                            <br><a href="{{ url_for('ajouter_athlete') }}">Commencez par ajouter un athlète</a>.
                                         {% endif %}
                                     </td>
                                 </tr>
@@ -95,17 +108,23 @@
             </div>
 
             <script>
-                const labels = [{% for a in stats.par_athlete %}{% if a.moyenne %}"{{ a.prenom }} {{ a.nom }}",{% endif %}{% endfor %}];
-                const moyennes = [{% for a in stats.par_athlete %}{% if a.moyenne %}{{ a.moyenne }},{% endif %}{% endfor %}];
+                // Données communes pour les graphiques
+                const labels = [{% for a in stats.par_athlete %}"{{ a.prenom }} {{ a.nom }}",{% endfor %}];
+                const coursesParAthlete = [{% for a in stats.par_athlete %}{{ a.nb_courses or 0 }},{% endfor %}];
+                const moyennes = [{% for a in stats.par_athlete %}{% if a.moyenne %}{{ a.moyenne }}{% else %}null{% endif %},{% endfor %}];
 
-                if (labels.length > 0) {
+                // 1. Graphique barres : Classement moyen
+                const labelsMoy = [{% for a in stats.par_athlete %}{% if a.moyenne %}"{{ a.prenom }} {{ a.nom }}",{% endif %}{% endfor %}];
+                const dataMoy = [{% for a in stats.par_athlete %}{% if a.moyenne %}{{ a.moyenne }},{% endif %}{% endfor %}];
+
+                if (labelsMoy.length > 0) {
                     new Chart(document.getElementById('graphMoyenne'), {
                         type: 'bar',
                         data: {
-                            labels: labels,
+                            labels: labelsMoy,
                             datasets: [{
-                                label: 'Classement moyen (plus bas = meilleur)',
-                                data: moyennes,
+                                label: 'Classement moyen',
+                                data: dataMoy,
                                 backgroundColor: '#dc2626'
                             }]
                         },
@@ -113,6 +132,33 @@
                             responsive: true,
                             plugins: { legend: { display: false } },
                             scales: { y: { beginAtZero: true } }
+                        }
+                    });
+                }
+
+                // 2. Graphique circulaire : Indice d'entraînement (répartition des courses par athlète)
+                if (labels.length > 0) {
+                    new Chart(document.getElementById('graphCirculaire'), {
+                        type: 'doughnut',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                data: coursesParAthlete,
+                                backgroundColor: [
+                                    '#007bff', '#28a745', '#ffc107', '#dc3545', '#17a2b8', '#6610f2', '#e83e8c', '#fd7e14'
+                                ],
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: { boxWidth: 12, font: { size: 11 } }
+                                }
+                            }
                         }
                     });
                 }

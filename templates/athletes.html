@@ -16,6 +16,32 @@
                         <a href="{{ url_for('ajouter_athlete') }}" class="btn btn-primary" style="padding: 10px 15px; background: #007bff; color: white; text-decoration: none; border-radius: 5px;">+ Ajouter un athlète</a>
                     {% endif %}
                 </div>
+
+                <!-- Filtres et options d'export par catégorie -->
+                <div class="card" style="margin-bottom: 20px; padding: 15px;">
+                    <form method="GET" action="{{ url_for('liste_athletes') }}" style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <label for="categorie" style="font-weight: bold;">Filtrer par catégorie :</label>
+                            <select name="categorie" id="categorie" class="form-control" style="padding: 6px; border-radius: 4px; border: 1px solid #ccc;" onchange="this.form.submit()">
+                                <option value="">Toutes les catégories</option>
+                                <!-- Remplacez par vos catégories dynamiques si vous les récupérez depuis la base -->
+                                <option value="Écoles" {% if categorie_selectionnee == 'Écoles' %}selected{% endif %}>Écoles</option>
+                                <option value="Benjamins" {% if categorie_selectionnee == 'Benjamins' %}selected{% endif %}>Benjamins</option>
+                                <option value="Minimes" {% if categorie_selectionnee == 'Minimes' %}selected{% endif %}>Minimes</option>
+                                <option value="Cadets" {% if categorie_selectionnee == 'Cadets' %}selected{% endif %}>Cadets</option>
+                                <option value="Juniors" {% if categorie_selectionnee == 'Juniors' %}selected{% endif %}>Juniors</option>
+                                <option value="U23" {% if categorie_selectionnee == 'U23' %}selected{% endif %}>U23</option>
+                                <option value="Elites" {% if categorie_selectionnee == 'Elites' %}selected{% endif %}>Elites</option>
+                                <option value="Masters" {% if categorie_selectionnee == 'Masters' %}selected{% endif %}>Masters</option>
+                            </select>
+                        </div>
+
+                        <div style="margin-left: auto; display: flex; gap: 10px;">
+                            <a href="{{ url_for('export_athletes_csv', categorie=categorie_selectionnee) }}" class="btn" style="background: #166534; color: white; padding: 8px 12px; text-decoration: none; border-radius: 4px; font-size: 0.9rem;">📥 Exporter CSV</a>
+                            <a href="{{ url_for('export_athletes_excel', categorie=categorie_selectionnee) }}" class="btn" style="background: #0284c7; color: white; padding: 8px 12px; text-decoration: none; border-radius: 4px; font-size: 0.9rem;">📊 Exporter Excel</a>
+                        </div>
+                    </form>
+                </div>
                 
                 <div class="card">
                     <table>
