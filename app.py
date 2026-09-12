@@ -5,6 +5,7 @@ from itsdangerous import URLSafeTimedSerializer
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
+from functools import wraps
 
 app = Flask(__name__)
 app.secret_key = "votre_cle_secrete_ici"
@@ -17,7 +18,7 @@ if not os.path.exists(UPLOAD_FOLDER):
 # Configuration pour les jetons de réinitialisation de mot de passe
 s = URLSafeTimedSerializer(app.secret_key)
 
-# Paramètres du serveur SMTP (Modifiez avec vos vrais identifiants ou un mot de passe d'application)
+# Paramètres du serveur SMTP
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
 SMTP_EMAIL = "captiva74@gmail.com"
@@ -82,6 +83,15 @@ init_db()
 
 CATEGORIES = ['École', 'Benjamin', 'Minime', 'Cadet', 'Junior', 'Espoir', 'Senior', 'Master']
 
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session or session.get('role') != 'admin':
+            flash("Accès réservé exclusivement à l'administrateur.", "erreur")
+            return redirect(url_for('index'))
+        return f(*args, **kwargs)
+    return decorated_function
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -122,7 +132,7 @@ def forgot_password():
             
             msg = EmailMessage()
             msg.set_content(f"Bonjour {user['username']},\n\nCliquez sur le lien suivant pour réinitialiser votre mot de passe :\n{reset_url}\n\nCe lien expirera dans 15 minutes.")
-            msg['Subject'] = "Réinitialisation de votre mot de passe - CycloStats"
+            msg['Subject'] = "Réinitialisation de votre mot de passe - KMC Cycling"
             msg['From'] = SMTP_EMAIL
             msg['To'] = email
             
@@ -194,21 +204,16 @@ def register():
     return render_template('register.html')
 
 @app.route('/admin/users')
+@admin_required
 def admin_users():
-    if 'user_id' not in session or session.get('role') != 'admin':
-        flash("Accès non autorisé.", "erreur")
-        return redirect(url_for('index'))
-        
     conn = get_db_connection()
     users = conn.execute('SELECT * FROM users').fetchall()
     conn.close()
     return render_template('admin_users.html', users=users)
 
 @app.route('/admin/user/toggle-block/<int:id>', methods=['POST'])
+@admin_required
 def toggle_block_user(id):
-    if 'user_id' not in session or session.get('role') != 'admin':
-        return redirect(url_for('index'))
-        
     conn = get_db_connection()
     user = conn.execute('SELECT is_blocked FROM users WHERE id = ?', (id,)).fetchone()
     if user:
@@ -220,10 +225,8 @@ def toggle_block_user(id):
     return redirect(url_for('admin_users'))
 
 @app.route('/admin/user/delete/<int:id>', methods=['POST'])
+@admin_required
 def admin_delete_user(id):
-    if 'user_id' not in session or session.get('role') != 'admin':
-        return redirect(url_for('index'))
-        
     if id == session['user_id']:
         flash("Vous ne pouvez pas supprimer votre propre compte admin.", "erreur")
         return redirect(url_for('admin_users'))
@@ -236,11 +239,8 @@ def admin_delete_user(id):
     return redirect(url_for('admin_users'))
 
 @app.route('/admin/user/edit/<int:id>', methods=['GET', 'POST'])
+@admin_required
 def admin_edit_user(id):
-    if 'user_id' not in session or session.get('role') != 'admin':
-        flash("Accès non autorisé.", "erreur")
-        return redirect(url_for('index'))
-        
     conn = get_db_connection()
     user = conn.execute('SELECT * FROM users WHERE id = ?', (id,)).fetchone()
     
@@ -358,10 +358,8 @@ def historique():
     return render_template('historique.html', resultats=resultats)
 
 @app.route('/resultat/modifier/<int:id>', methods=['GET', 'POST'])
+@admin_required
 def modifier_resultat(id):
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-        
     conn = get_db_connection()
     resultat = conn.execute('SELECT * FROM resultats WHERE id = ?', (id,)).fetchone()
     if not resultat:
@@ -392,10 +390,8 @@ def modifier_resultat(id):
     return render_template('modifier_resultat.html', resultat=resultat, athletes=athletes, categories=CATEGORIES)
 
 @app.route('/resultat/supprimer/<int:id>', methods=['POST'])
+@admin_required
 def supprimer_resultat(id):
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-        
     conn = get_db_connection()
     conn.execute('DELETE FROM resultats WHERE id = ?', (id,))
     conn.commit()
@@ -414,9 +410,8 @@ def liste_athletes():
     return render_template('liste_athletes.html', athletes=athletes)
 
 @app.route('/athlete/ajouter', methods=['GET', 'POST'])
+@admin_required
 def ajouter_athlete():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
     if request.method == 'POST':
         nom = request.form['nom']
         prenom = request.form['prenom']
@@ -455,12 +450,16 @@ def profil_athlete(id):
     return render_template('profil_athlete.html', athlete=athlete, resultats=resultats)
 
 @app.route('/athlete/modifier/<int:id>', methods=['GET', 'POST'])
+@admin_required
 def modifier_athlete(id):
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
     conn = get_db_connection()
     athlete = conn.execute('SELECT * FROM athletes WHERE id = ?', (id,)).fetchone()
     
+    if not athlete:
+        conn.close()
+        flash("Athlète introuvable.", "erreur")
+        return redirect(url_for('liste_athletes'))
+
     if request.method == 'POST':
         nom = request.form['nom']
         prenom = request.form['prenom']
@@ -486,9 +485,8 @@ def modifier_athlete(id):
     return render_template('modifier_athlete.html', athlete=athlete, categories=CATEGORIES)
 
 @app.route('/athlete/supprimer/<int:id>', methods=['POST'])
+@admin_required
 def supprimer_athlete(id):
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
     conn = get_db_connection()
     conn.execute('DELETE FROM athletes WHERE id = ?', (id,))
     conn.commit()
@@ -497,10 +495,8 @@ def supprimer_athlete(id):
     return redirect(url_for('liste_athletes'))
 
 @app.route('/resultat/ajouter', methods=['GET', 'POST'])
+@admin_required
 def ajouter_resultat():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-        
     conn = get_db_connection()
     
     if request.method == 'POST':

@@ -1,9 +1,8 @@
-<!-- @ts-nocheck -->
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Tableau de bord - <img src="{{ url_for('static', filename='kmc.jpg') }}" alt="Logo" style="height: 15px; vertical-align: middle;"> KMC Cycling</title>
+    <title>Tableau de bord - KMC Cycling</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 </head>
@@ -20,7 +19,15 @@
                     {% endif %}
                 {% endwith %}
 
-                <h1>📊 Tableau de bord</h1>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h1>📊 Tableau de bord</h1>
+                    {% if session.get('role') == 'admin' %}
+                        <div style="display: flex; gap: 10px;">
+                            <a href="{{ url_for('ajouter_athlete') }}" class="btn btn-primary" style="padding: 10px 15px; background: #007bff; color: white; text-decoration: none; border-radius: 5px;">+ Ajouter un athlète</a>
+                            <a href="{{ url_for('ajouter_resultat') }}" class="btn btn-primary" style="padding: 10px 15px; background: #28a745; color: white; text-decoration: none; border-radius: 5px;">+ Ajouter un résultat</a>
+                        </div>
+                    {% endif %}
+                </div>
 
                 <div class="grid">
                     <div class="card">
@@ -74,7 +81,12 @@
                                 </tr>
                             {% else %}
                                 <tr>
-                                    <td colspan="6">Aucune donnée pour le moment. <a href="{{ url_for('ajouter_athlete') }}">Commencez par ajouter un athlète</a>.</td>
+                                    <td colspan="6">
+                                        Aucune donnée pour le moment. 
+                                        {% if session.get('role') == 'admin' %}
+                                            <a href="{{ url_for('ajouter_athlete') }}">Commencez par ajouter un athlète</a>.
+                                        {% endif %}
+                                    </td>
                                 </tr>
                             {% endfor %}
                         </tbody>
