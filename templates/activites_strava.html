@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Activités GPX - CycloStats</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="app-layout">
+        {% include 'sidebar.html' %}
+        <main class="content">
+            <div class="container">
+                <div class="card">
+                    <h1>📍 Activités GPX Importées</h1>
+                    <p>Liste des dernières sorties enregistrées via l'importation de fichiers GPX.</p>
+                    
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="{{ category }}">{{ message }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <div style="margin-top: 20px; overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background-color: #f4f4f4; text-align: left;">
+                                    <th style="padding: 10px;">Date</th>
+                                    <th style="padding: 10px;">Nom de la sortie</th>
+                                    <th style="padding: 10px;">Distance (km)</th>
+                                    <th style="padding: 10px;">Durée</th>
+                                    <th style="padding: 10px;">FC Moyenne</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for act in activites %}
+                                <tr style="border-bottom: 1px solid #ddd;">
+                                    <td style="padding: 10px;">{{ act.date_activite[:10] if act.date_activite else 'N/A' }}</td>
+                                    <td style="padding: 10px; font-weight: bold;">{{ act.nom }}</td>
+                                    <td style="padding: 10px;">{{ "%.2f"|format(act.distance) }} km</td>
+                                    <td style="padding: 10px;">{{ act.duree // 60 }} min</td>
+                                    <td style="padding: 10px;">{{ act.frequence_cardiaque_moy|default('N/A', true) }} bpm</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="5" style="padding: 20px; text-align: center; color: #777;">Aucune activité importée pour le moment. Rendez-vous dans votre profil pour importer des fichiers GPX.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

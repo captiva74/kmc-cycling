@@ -36,6 +36,24 @@
                         </div>
                     </form>
                 </div>
+
+                <!-- Section Importation GPX réservée exclusivement à l'administrateur -->
+                {% if session.get('role') == 'admin' %}
+                <div class="card" style="margin-top: 20px;">
+                    <h2>📍 Importation de traces GPX</h2>
+                    <p>Importez un ou plusieurs fichiers GPX pour enregistrer les activités du club.</p>
+                    
+                    <form action="{{ url_for('importer_gpx') }}" method="POST" enctype="multipart/form-data" style="margin-top: 15px;">
+                        <div style="margin-bottom: 15px;">
+                            <input type="file" name="fichier_gpx" accept=".gpx" multiple required style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+                        </div>
+                        <button type="submit" class="btn" style="background-color: #28a745; color: white; padding: 10px 15px; border-radius: 5px; border: none; cursor: pointer; text-decoration: none; display: inline-block;">
+                            🔄 Importer les fichiers GPX
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+
             </div>
         </main>
     </div>

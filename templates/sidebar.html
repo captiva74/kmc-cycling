@@ -35,6 +35,10 @@
                     <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
                     Saisir un résultat
                 </a>
+                <a href="{{ url_for('liste_activites') }}" class="sidebar-sous-lien {% if request.endpoint == 'liste_activites' %}actif{% endif %}">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    Activités GPX
+                </a>
             {% endif %}
         </div>
     </nav>

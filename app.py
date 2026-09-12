@@ -1,4 +1,5 @@
 import os
+import gpxpy
 import smtplib
 from email.message import EmailMessage
 from itsdangerous import URLSafeTimedSerializer
@@ -10,10 +11,13 @@ from functools import wraps
 app = Flask(__name__)
 app.secret_key = "votre_cle_secrete_ici"
 UPLOAD_FOLDER = 'static/uploads'
+GPX_UPLOAD_FOLDER = 'uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
+if not os.path.exists(GPX_UPLOAD_FOLDER):
+    os.makedirs(GPX_UPLOAD_FOLDER)
 
 # Configuration pour les jetons de réinitialisation de mot de passe
 s = URLSafeTimedSerializer(app.secret_key)
@@ -31,7 +35,8 @@ def get_db_connection():
 
 def init_db():
     conn = get_db_connection()
-    # Table des utilisateurs (Login / Register)
+    
+    # Table des utilisateurs (Login / Register) sans colonnes Strava
     conn.execute('''
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -42,6 +47,7 @@ def init_db():
             is_blocked INTEGER DEFAULT 0
         )
     ''')
+    
     # Table des athlètes
     conn.execute('''
         CREATE TABLE IF NOT EXISTS athletes (
@@ -53,6 +59,7 @@ def init_db():
             nom_fichier TEXT
         )
     ''')
+    
     # Table des résultats de courses (Historique)
     conn.execute('''
         CREATE TABLE IF NOT EXISTS resultats (
@@ -62,6 +69,18 @@ def init_db():
             date_course TEXT,
             classement INTEGER,
             FOREIGN KEY (athlete_id) REFERENCES athletes (id) ON DELETE CASCADE
+        )
+    ''')
+
+    # Table des activités (basée sur les fichiers GPX)
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS activites (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nom TEXT,
+            distance REAL,
+            duree INTEGER,
+            date_activite TEXT,
+            frequence_cardiaque_moy REAL
         )
     ''')
     
@@ -199,7 +218,6 @@ def register():
             return redirect(url_for('login'))
         except sqlite3.IntegrityError as e:
             conn.close()
-            # Vérifie si l'erreur provient de l'email ou du nom d'utilisateur
             if "email" in str(e).lower():
                 flash("Cette adresse email est déjà utilisée.", "erreur")
             else:
@@ -273,6 +291,86 @@ def admin_edit_user(id):
             
     conn.close()
     return render_template('admin_edit_user.html', user=user)
+
+# --- ROUTES ACTIVITÉS GPX (Remplace Strava) ---
+@app.route('/activites/importer', methods=['POST'])
+def importer_gpx():
+    if session.get('role') != 'admin':
+        flash("Accès réservé à l'administrateur.", "erreur")
+        return redirect(url_for('profil'))
+
+    if 'fichier_gpx' not in request.files:
+        flash("Aucun fichier sélectionné.", "erreur")
+        return redirect(url_for('profil'))
+
+    fichiers = request.files.getlist('fichier_gpx')
+    nb_importes = 0
+
+    conn = get_db_connection()
+
+    for fichier in fichiers:
+        if fichier and fichier.filename.endswith('.gpx'):
+            chemin_fichier = os.path.join(GPX_UPLOAD_FOLDER, fichier.filename)
+            fichier.save(chemin_fichier)
+
+            try:
+                with open(chemin_fichier, 'r', encoding='utf-8') as gpx_file:
+                    gpx = gpxpy.parse(gpx_file)
+
+                    distance_metres = gpx.length_3d() or gpx.length_2d() or 0
+                    distance_km = distance_metres / 1000.0
+
+                    duree_sec = 0
+                    date_activite = None
+                    
+                    duration = gpx.get_duration()
+                    if duration:
+                        duree_sec = int(duration)
+
+                    for track in gpx.tracks:
+                        for segment in track.segments:
+                            for point in segment.points:
+                                if point.time:
+                                    date_activite = point.time.strftime('%Y-%m-%d %H:%M:%S')
+                                    break
+                            if date_activite:
+                                break
+                        if date_activite:
+                            break
+
+                    nom_activite = fichier.filename.rsplit('.', 1)[0]
+
+                    conn.execute('''
+                        INSERT INTO activites (nom, distance, duree, date_activite, frequence_cardiaque_moy)
+                        VALUES (?, ?, ?, ?, ?)
+                    ''', (nom_activite, distance_km, duree_sec, date_activite, None))
+                    
+                    nb_importes += 1
+
+            except Exception as e:
+                print(f"Erreur lors de la lecture du fichier {fichier.filename}: {e}")
+            
+            if os.path.exists(chemin_fichier):
+                os.remove(chemin_fichier)
+
+    conn.commit()
+    conn.close()
+
+    flash(f"{nb_importes} fichier(s) GPX importé(s) avec succès !", "succes")
+    return redirect(url_for('profil'))
+
+@app.route('/activites')
+def liste_activites():
+    if 'user_id' not in session or session.get('role') != 'admin':
+        flash("Accès réservé exclusivement à l'administrateur.", "erreur")
+        return redirect(url_for('index'))
+        
+    conn = get_db_connection()
+    activites = conn.execute('SELECT * FROM activites ORDER BY date_activite DESC').fetchall()
+    conn.close()
+    
+    return render_template('activites_strava.html', activites=activites)
+# --- FIN ROUTES ACTIVITÉS GPX ---
 
 @app.route('/logout')
 def logout():
