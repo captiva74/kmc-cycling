@@ -111,6 +111,20 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+def formater_duree(secondes):
+    if not secondes:
+        return "0min"
+    heures = secondes // 3600
+    minutes = (secondes % 3600) // 60
+    
+    if heures > 0:
+        return f"{heures}h:{minutes:02d}mn"
+    else:
+        return f"{minutes}mn"
+
+# Rendre cette fonction accessible directement dans vos templates HTML Jinja2
+app.jinja_env.globals.update(formater_duree=formater_duree)
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':

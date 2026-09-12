@@ -39,7 +39,7 @@
                                     <td style="padding: 10px;">{{ act.date_activite[:10] if act.date_activite else 'N/A' }}</td>
                                     <td style="padding: 10px; font-weight: bold;">{{ act.nom }}</td>
                                     <td style="padding: 10px;">{{ "%.2f"|format(act.distance) }} km</td>
-                                    <td style="padding: 10px;">{{ act.duree // 60 }} min</td>
+                                    <td style="padding: 10px;">{{ formater_duree(act.duree) }}</td>
                                     <td style="padding: 10px;">{{ act.frequence_cardiaque_moy|default('N/A', true) }} bpm</td>
                                 </tr>
                                 {% else %}
