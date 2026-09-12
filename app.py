@@ -197,9 +197,13 @@ def register():
             conn.close()
             flash("Inscription réussie ! Vous pouvez vous connecter.", "succes")
             return redirect(url_for('login'))
-        except sqlite3.IntegrityError:
+        except sqlite3.IntegrityError as e:
             conn.close()
-            flash("Ce nom d'utilisateur existe déjà.", "erreur")
+            # Vérifie si l'erreur provient de l'email ou du nom d'utilisateur
+            if "email" in str(e).lower():
+                flash("Cette adresse email est déjà utilisée.", "erreur")
+            else:
+                flash("Ce nom d'utilisateur existe déjà.", "erreur")
             
     return render_template('register.html')
 
