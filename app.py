@@ -80,9 +80,16 @@ def init_db():
             distance REAL,
             duree INTEGER,
             date_activite TEXT,
-            frequence_cardiaque_moy REAL
+            frequence_cardiaque_moy REAL,
+            FOREIGN KEY (athlete_id) REFERENCES athletes (id) ON DELETE CASCADE
         )
     ''')
+
+    # Sécurité pour ajouter la colonne athlete_id si la table existait déjà sans elle
+    try:
+        conn.execute('ALTER TABLE activites ADD COLUMN athlete_id INTEGER;')
+    except sqlite3.OperationalError:
+        pass  # La colonne existe déjà, on ignore l'erreur
     
     # Créer ou mettre à jour l'administrateur par défaut avec le rôle 'admin'
     user = conn.execute('SELECT * FROM users WHERE username = ?', ('admin',)).fetchone()
@@ -313,6 +320,11 @@ def importer_gpx():
         flash("Accès réservé à l'administrateur.", "erreur")
         return redirect(url_for('profil'))
 
+    athlete_id = request.form.get('athlete_id')
+    if not athlete_id:
+        flash("Veuillez sélectionner un athlète pour ces fichiers GPX.", "erreur")
+        return redirect(url_for('profil'))
+
     if 'fichier_gpx' not in request.files:
         flash("Aucun fichier sélectionné.", "erreur")
         return redirect(url_for('profil'))
@@ -355,9 +367,9 @@ def importer_gpx():
                     nom_activite = fichier.filename.rsplit('.', 1)[0]
 
                     conn.execute('''
-                        INSERT INTO activites (nom, distance, duree, date_activite, frequence_cardiaque_moy)
-                        VALUES (?, ?, ?, ?, ?)
-                    ''', (nom_activite, distance_km, duree_sec, date_activite, None))
+                        INSERT INTO activites (athlete_id, nom, distance, duree, date_activite, frequence_cardiaque_moy)
+                        VALUES (?, ?, ?, ?, ?, ?)
+                    ''', (athlete_id, nom_activite, distance_km, duree_sec, date_activite, None))
                     
                     nb_importes += 1
 
@@ -380,10 +392,26 @@ def liste_activites():
         return redirect(url_for('index'))
         
     conn = get_db_connection()
-    activites = conn.execute('SELECT * FROM activites ORDER BY date_activite DESC').fetchall()
+    activites = conn.execute('''
+        SELECT act.*, a.nom as athlete_nom, a.prenom as athlete_prenom 
+        FROM activites act
+        LEFT JOIN athletes a ON act.athlete_id = a.id
+        ORDER BY act.date_activite DESC
+    ''').fetchall()
     conn.close()
     
     return render_template('activites_strava.html', activites=activites)
+
+@app.route('/activites/supprimer/<int:id>', methods=['POST'])
+@admin_required
+def supprimer_activite(id):
+    conn = get_db_connection()
+    conn.execute('DELETE FROM activites WHERE id = ?', (id,))
+    conn.commit()
+    conn.close()
+    
+    flash("Activité supprimée avec succès.", "succes")
+    return redirect(url_for('liste_activites'))
 # --- FIN ROUTES ACTIVITÉS GPX ---
 
 @app.route('/logout')
@@ -454,9 +482,12 @@ def profil():
         
     cursor.execute('SELECT username, email FROM users WHERE id = ?', (session['user_id'],))
     utilisateur = cursor.fetchone()
+
+    # Récupérer la liste des athlètes pour le formulaire d'import GPX
+    athletes = conn.execute('SELECT id, nom, prenom FROM athletes ORDER BY nom, prenom').fetchall()
     conn.close()
     
-    return render_template('profil.html', utilisateur=utilisateur)
+    return render_template('profil.html', utilisateur=utilisateur, athletes=athletes)
 
 @app.route('/historique')
 def historique():

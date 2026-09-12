@@ -27,24 +27,30 @@
                             <thead>
                                 <tr style="background-color: #f4f4f4; text-align: left;">
                                     <th style="padding: 10px;">Date</th>
+                                    <th style="padding: 10px;">Athlète</th>
                                     <th style="padding: 10px;">Nom de la sortie</th>
                                     <th style="padding: 10px;">Distance (km)</th>
                                     <th style="padding: 10px;">Durée</th>
                                     <th style="padding: 10px;">FC Moyenne</th>
+                                    <th style="padding: 10px; text-align: center;">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for act in activites %}
                                 <tr style="border-bottom: 1px solid #ddd;">
                                     <td style="padding: 10px;">{{ act.date_activite[:10] if act.date_activite else 'N/A' }}</td>
-                                    <td style="padding: 10px; font-weight: bold;">{{ act.nom }}</td>
+                                    <td style="padding: 10px; font-weight: bold;">{{ act.athlete_nom }} {{ act.athlete_prenom }}</td>
+                                    <td style="padding: 10px;">{{ act.nom }}</td>
                                     <td style="padding: 10px;">{{ "%.2f"|format(act.distance) }} km</td>
                                     <td style="padding: 10px;">{{ formater_duree(act.duree) }}</td>
                                     <td style="padding: 10px;">{{ act.frequence_cardiaque_moy|default('N/A', true) }} bpm</td>
-                                </tr>
-                                {% else %}
-                                <tr>
-                                    <td colspan="5" style="padding: 20px; text-align: center; color: #777;">Aucune activité importée pour le moment. Rendez-vous dans votre profil pour importer des fichiers GPX.</td>
+                                    <td style="padding: 10px; text-align: center;">
+                                        <form action="{{ url_for('supprimer_activite', id=act.id) }}" method="POST" onsubmit="return confirm('Voulez-vous vraiment supprimer cette sortie ?');" style="display:inline;">
+                                            <button type="submit" class="btn-icone btn-supprimer" title="Supprimer">
+                                                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                                            </button>
+                                        </form>
+                                    </td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
