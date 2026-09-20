@@ -956,7 +956,7 @@ def importer_gpx():
     flash(
         f"{nb_importes} fichier(s) GPX importé(s) avec succès !", "succes"
     )
-    return redirect(url_for("profil"))
+    return redirect(url_for("liste_activites"))
 
 
 @app.route("/activites/supprimer/<int:id>", methods=["POST"])
