@@ -10,19 +10,60 @@
         {% include 'sidebar.html' %}
         <main class="content">
             <div class="container">
-                <div class="card">
-                    <h1>📍 Activités GPX Importées</h1>
-                    <p>Liste des dernières sorties enregistrées via l'importation de fichiers GPX.</p>
-                    
-                    {% with messages = get_flashed_messages(with_categories=true) %}
-                        {% if messages %}
-                            {% for category, message in messages %}
-                                <div class="{{ category }}">{{ message }}</div>
-                            {% endfor %}
-                        {% endif %}
-                    {% endwith %}
 
-                    <div style="margin-top: 20px; overflow-x: auto;">
+                <!-- En-tête de la section avec le bouton d'action -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h1 style="margin: 0;">📍 Activités GPX Importées</h1>
+                    {% if session.get('role') == 'admin' %}
+                    <button type="button" id="btnToggleGpx" onclick="toggleFormulaireGpx()" class="btn" style="background-color: #28a745; color: white; padding: 10px 18px; border-radius: 6px; border: none; cursor: pointer; font-size: 15px; font-weight: bold;">
+                        ➕ Importer GPX
+                    </button>
+                    {% endif %}
+                </div>
+
+                <!-- Messages Flash -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="{{ category }}" style="margin-bottom: 15px;">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <!-- Card d'importation GPX (Masquée par défaut) -->
+                {% if session.get('role') == 'admin' %}
+                <div id="cardImportGpx" class="card" style="display: none; margin-bottom: 25px; border-left: 4px solid #28a745;">
+                    <h2>📍 Importation de traces GPX</h2>
+                    <p>Sélectionnez un athlète et importez un ou plusieurs fichiers GPX pour ses activités.</p>
+                    
+                    <form action="{{ url_for('importer_gpx') }}" method="POST" enctype="multipart/form-data" style="margin-top: 15px;">
+                        
+                        <div style="margin-bottom: 15px;">
+                            <label for="athlete_id" style="display: block; margin-bottom: 5px; font-weight: bold;">Athlète concerné :</label>
+                            <select name="athlete_id" id="athlete_id" required style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+                                <option value="">-- Choisir un athlète --</option>
+                                {% for athlete in athletes %}
+                                    <option value="{{ athlete.id }}">{{ athlete.nom }} {{ athlete.prenom }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div style="margin-bottom: 15px;">
+                            <label for="fichier_gpx" style="display: block; margin-bottom: 5px; font-weight: bold;">Fichiers GPX :</label>
+                            <input type="file" id="fichier_gpx" name="fichier_gpx" accept=".gpx" multiple required style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+                        </div>
+
+                        <button type="submit" class="btn" style="background-color: #28a745; color: white; padding: 10px 15px; border-radius: 5px; border: none; cursor: pointer; display: inline-block;">
+                            🔄 Importer les fichiers GPX
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+
+                <!-- Tableau des Activités -->
+                <div class="card">
+                    <p>Liste des dernières sorties enregistrées via l'importation de fichiers GPX.</p>
+                    <div style="margin-top: 15px; overflow-x: auto;">
                         <table style="width: 100%; border-collapse: collapse;">
                             <thead>
                                 <tr style="background-color: #f4f4f4; text-align: left;">
@@ -52,13 +93,36 @@
                                         </form>
                                     </td>
                                 </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="7" style="padding: 15px; text-align: center; color: #777;">Aucune activité GPX enregistrée pour le moment.</td>
+                                </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
                     </div>
                 </div>
+
             </div>
         </main>
     </div>
+
+    <!-- Script JavaScript pour afficher / masquer le formulaire -->
+    <script>
+        function toggleFormulaireGpx() {
+            const card = document.getElementById('cardImportGpx');
+            const btn = document.getElementById('btnToggleGpx');
+            
+            if (card.style.display === 'none' || card.style.display === '') {
+                card.style.display = 'block';
+                btn.textContent = '❌ Fermer';
+                btn.style.backgroundColor = '#dc3545';
+            } else {
+                card.style.display = 'none';
+                btn.textContent = '➕ Importer GPX';
+                btn.style.backgroundColor = '#28a745';
+            }
+        }
+    </script>
 </body>
 </html>
