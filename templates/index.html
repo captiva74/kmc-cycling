@@ -11,10 +11,12 @@
         {% include 'sidebar.html' %}
         <main class="content">
             <div class="container">
-                {% with messages = get_flashed_messages() %}
+                {% with messages = get_flashed_messages(with_categories=true) %}
                     {% if messages %}
-                        {% for message in messages %}
-                            <div class="flash flash-success">{{ message }}</div>
+                        {% for category, message in messages %}
+                            <div class="flash flash-{{ category if category != 'erreur' else 'danger' }}">
+                                {{ message }}
+                            </div>
                         {% endfor %}
                     {% endif %}
                 {% endwith %}
@@ -165,5 +167,18 @@
             </script>
         </main>
     </div>
+    <script>
+        // Fait disparaître le message flash automatiquement après 3 secondes
+        document.addEventListener("DOMContentLoaded", function() {
+            const flashMessage = document.querySelector('.flash');
+            if (flashMessage) {
+                setTimeout(() => {
+                    flashMessage.style.transition = "opacity 0.5s ease";
+                    flashMessage.style.opacity = "0";
+                    setTimeout(() => flashMessage.remove(), 500);
+                }, 3000);
+            }
+        });
+    </script>
 </body>
 </html>
